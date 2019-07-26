@@ -4,8 +4,8 @@ Easy miniframework, which consist of one class, which will help you to parse com
 ## Usage
 ```java
 ParseIt p = ParseIt.parse("some func(a b c)");
-String funcInit = p.readUntilWithoutSkip("(");
-String whatIsInTheBrackets = p.readBetween("(", ")");
+String funcInit = p.readUntilWithoutSkip("(").string;
+String whatIsInTheBrackets = p.readBetween("(", ")").string;
 ```
 
 ```java
