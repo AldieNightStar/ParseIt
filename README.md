@@ -25,3 +25,23 @@ public class Main {
     }
 }
 ```
+
+## Install
+`pom.xml`
+* Add `jitpack.io` repository to list if there is no such
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+
+```xml
+<dependency>
+    <groupId>com.github.AldieNightStar</groupId>
+    <artifactId>ParseIt</artifactId>
+    <version>33dc2ee033</version>
+</dependency>
+```
