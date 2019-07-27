@@ -50,6 +50,6 @@ public class Main {
 <dependency>
     <groupId>com.github.AldieNightStar</groupId>
     <artifactId>ParseIt</artifactId>
-    <version>33dc2ee033</version>
+    <version>-SNAPSHOT</version>
 </dependency>
 ```
