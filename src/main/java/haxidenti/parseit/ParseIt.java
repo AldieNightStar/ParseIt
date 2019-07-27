@@ -1,16 +1,16 @@
 package haxidenti.parseit;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class ParseIt {
     private String str;
     private int pos;
+    private String escapeOperator;
 
     private ParseIt() {
+        escapeOperator = "\\";
     }
 
     public static ParseIt parse(String s) {
@@ -18,6 +18,10 @@ public class ParseIt {
         p.str = s;
         p.pos = 0;
         return p;
+    }
+
+    public void setEscapeOperator(String escapeOperator) {
+        this.escapeOperator = escapeOperator;
     }
 
     public void decrementPos(int num) {
@@ -148,9 +152,59 @@ public class ParseIt {
                 break;
             }
         }
+        if (pos1 == null || pos2 == null) return new Result(new RuntimeException("There are no quotes"));
         Result result = new Result(this.str.substring(pos1.index + pos1.length, pos2.index), quote);
         this.pos = pos2.index + pos2.length;
         return result;
+    }
+
+    public Escaped escape(String... strings) {
+        Escaped escaped = new Escaped(str.substring(pos));
+        int i = 0;
+        for (String s : strings) {
+            escaped.string = escaped.string.replace(s, "$$(" + i + ")$$");
+            escaped.map.put(i, s);
+            i++;
+        }
+        return escaped;
+    }
+
+    public Escaped escapeQuoted(String quote) {
+        AtomicBoolean escapeOperatorPresent = new AtomicBoolean(false);
+        List<Position> poses = getPoses(str, quote, 0, pos).stream()
+                .sorted(Comparator.comparingInt(p -> p.index))
+                .filter(p -> {
+                    if (substr(str, p.index - escapeOperator.length(), p.index).equals(escapeOperator)) {
+                        escapeOperatorPresent.set(true);
+                        return false;
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+        boolean setStartPos = true;
+        Position startPos = null;
+        Position endPos = null;
+        String textBetween = "";
+        int cnt = 0;
+        Escaped escaped = new Escaped(str);
+        for (Position pos : poses) {
+            if (setStartPos) {
+                startPos = pos;
+            } else {
+                endPos = pos;
+                textBetween = str.substring(startPos.index + startPos.length, endPos.index);
+                escaped.map.put(cnt, textBetween);
+                escaped.string = escaped.string.replace(quote + textBetween + quote, "$$(" + cnt + ")$$");
+                if (escapeOperatorPresent.get()) escaped.map.put(cnt, escaped.map.get(cnt).replace(escapeOperator, ""));
+                cnt++;
+            }
+            setStartPos = !setStartPos;
+        }
+        return escaped;
+    }
+
+    private static String replaceSubstring(String str, int start, int end, String dest) {
+        return str.substring(0, start) + dest + str.substring(end);
     }
 
     private static Set<Position> getPoses(String str, String dest, int mark, int startPos) {
@@ -172,4 +226,13 @@ public class ParseIt {
         }
         return true;
     }
+
+    private static String substr(String str, int startPos, int endPos) {
+        try {
+            return str.substring(startPos, endPos);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
 }

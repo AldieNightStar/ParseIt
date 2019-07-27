@@ -48,11 +48,9 @@ public class ParseTest {
 
     @Test
     public void readBetweenTest01() {
-        String text = "aaa<zzz>";
-        ParseIt p = ParseIt.parse(text);
-        String expected = "zzz";
+        ParseIt p = parse("aaa<zzz>");
         Result result = p.readBetween("<", ">");
-        assertEquals(expected, result.string);
+        assertEquals("zzz", result.string);
     }
 
     @Test
@@ -135,7 +133,21 @@ public class ParseTest {
     }
 
     @Test
-    public void skiptTest01() {
+    public void readBetweenQuotesTest04() {
+        ParseIt p = parse("xxx");
+        Result result = p.readBetweenQuotes("\"");
+        assertTrue(result.hasError());
+    }
+
+    @Test
+    public void readBetweenQuotesTest05() {
+        ParseIt p = parse("xxx\"");
+        Result result = p.readBetweenQuotes("\"");
+        assertTrue(result.hasError());
+    }
+
+    @Test
+    public void skipTest() {
         ParseIt p = parse("--minus");
         String s = p.skip(2);
         assertEquals("--", s);
@@ -155,6 +167,30 @@ public class ParseTest {
         assertEquals("int a", args[0].trim());
         assertEquals("short b", args[1].trim());
         assertEquals("return a + b;", body.trim());
+    }
+
+    @Test
+    public void escapeTest() {
+        ParseIt p = parse("a123");
+        Escaped escaped = p.escape("1", "2", "3");
+        String unescaped = escaped.unescape();
+        assertEquals("a123", unescaped);
+    }
+
+    @Test
+    public void escapeInQuotes01() {
+        ParseIt p = parse("t1: \"dsadasdas\" t2: \"zzzzzz\" t3: \"zx\"");
+        Escaped escaped = p.escapeQuoted("\"");
+        assertEquals("t1: $$(0)$$ t2: $$(1)$$ t3: $$(2)$$", escaped.string);
+        assertEquals("t1: dsadasdas t2: zzzzzz t3: zx", escaped.unescape());
+        assertEquals("zzzzzz", escaped.unescapeSingleString("$$(1)$$"));
+    }
+
+    @Test
+    public void escapeInQuotes02() {
+        ParseIt p = parse("t1: \"123\\\"321\"");
+        Escaped escaped = p.escapeQuoted("\"");
+        assertEquals("123\"321", escaped.getFirstEscaped());
     }
 
     private static ParseIt parse(String text) {
