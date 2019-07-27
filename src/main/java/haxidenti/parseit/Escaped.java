@@ -30,14 +30,14 @@ public class Escaped {
         return str[0];
     }
 
-    public String unescapeSingleString(String s) {
+    public String unescape(String s) {
         Escaped escaped = new Escaped(s);
         escaped.map = map;
         return escaped.unescape();
     }
 
     public boolean isEmpty() {
-        return string == null || string.equals("");
+        return string == null || string.isEmpty();
     }
 
     public List<String> getEscapedList() {

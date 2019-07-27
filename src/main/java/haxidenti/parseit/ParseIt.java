@@ -1,7 +1,12 @@
 package haxidenti.parseit;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ParseIt {
@@ -203,6 +208,35 @@ public class ParseIt {
         return escaped;
     }
 
+    public boolean validate(String string, String delimiter) {
+        int oldPos = pos;
+        String[] arr = (string).split(Pattern.quote(delimiter));
+        for (String s : arr) {
+            Result result = readUntil(s);
+            if (result.hasError()) return false;
+        }
+        pos = oldPos;
+        return true;
+    } // p.validate("call *(*);")
+
+    public boolean prefixOfNext(String prefix) {
+        if (prefix == null || prefix.isEmpty()) return false;
+        String next = substr(str, pos, pos + prefix.length());
+        return next.startsWith(prefix);
+    }
+
+    public boolean skipPrefix(String prefix) {
+        if (prefixOfNext(prefix)) {
+            pos += prefix.length();
+            return true;
+        }
+        return false;
+    }
+
+    public static Escaped escapeQuoted(String code, String quote) {
+        return ParseIt.parse(code).escapeQuoted(quote);
+    }
+
     private static String replaceSubstring(String str, int start, int end, String dest) {
         return str.substring(0, start) + dest + str.substring(end);
     }
@@ -233,6 +267,19 @@ public class ParseIt {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    private static int getLessNumberInList(List<Integer> ints, int number) {
+        List<Integer> list = ints.stream()
+                .filter(i -> i < number)
+                .sorted(Comparator.comparingInt(i -> i))
+                .collect(Collectors.toList());
+        if (list.isEmpty()) return 0;
+        return list.get(0);
+    }
+
+    private static <T> List<Integer> mapToIntList(List<T> list, Function<T, Integer> func) {
+        return list.stream().map(func).collect(Collectors.toList());
     }
 
 }

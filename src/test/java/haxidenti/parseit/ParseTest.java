@@ -2,6 +2,8 @@ package haxidenti.parseit;
 
 import org.junit.Test;
 
+import java.util.regex.Pattern;
+
 import static org.junit.Assert.*;
 
 public class ParseTest {
@@ -155,7 +157,7 @@ public class ParseTest {
     }
 
     @Test
-    public void fullTest() {
+    public void fullTest01() {
         String s = "func add(int a, short b) { return a + b; }";
         ParseIt p = parse(s);
         String opName = p.readUntil(" ").string;
@@ -167,6 +169,27 @@ public class ParseTest {
         assertEquals("int a", args[0].trim());
         assertEquals("short b", args[1].trim());
         assertEquals("return a + b;", body.trim());
+    }
+
+    @Test
+    public void fullTest02() throws Exception {
+        String code = "register(\"a(123)\", \",,Irvin \\\"26\\\",,\", \"))))\");";
+        Escaped escaped = ParseIt.escapeQuoted(code, "\"");
+        code = escaped.string;
+
+        ParseIt p = parse(code);
+        String funcName = p.readUntilWithoutSkipping("(").string;
+        String[] args = p.readBetween("(", ")").string.split(Pattern.quote(","));
+        for (int i = 0; i < args.length; i++) {
+            args[i] = escaped.unescape(args[i].trim());
+        }
+        String lastChar = p.readUntil(";").skipped;
+
+        assertEquals("register", funcName);
+        assertEquals("a(123)", args[0]);
+        assertEquals(",,Irvin \"26\",,", args[1]);
+        assertEquals("))))", args[2]);
+        assertEquals(";", lastChar);
     }
 
     @Test
@@ -183,7 +206,7 @@ public class ParseTest {
         Escaped escaped = p.escapeQuoted("\"");
         assertEquals("t1: $$(0)$$ t2: $$(1)$$ t3: $$(2)$$", escaped.string);
         assertEquals("t1: dsadasdas t2: zzzzzz t3: zx", escaped.unescape());
-        assertEquals("zzzzzz", escaped.unescapeSingleString("$$(1)$$"));
+        assertEquals("zzzzzz", escaped.unescape("$$(1)$$"));
     }
 
     @Test
@@ -191,6 +214,71 @@ public class ParseTest {
         ParseIt p = parse("t1: \"123\\\"321\"");
         Escaped escaped = p.escapeQuoted("\"");
         assertEquals("123\"321", escaped.getFirstEscaped());
+    }
+
+    @Test
+    public void prefixTest01() {
+        ParseIt p = parse("xxPREFIXpoe");
+        assertTrue(p.skipPrefix("xx"));
+        assertTrue(p.prefixOfNext("PREFIX"));
+    }
+
+    @Test
+    public void prefixTest02() {
+        ParseIt p = parse("abc123*&^002IhorFox-end");
+        assertTrue(p.skipPrefix("abc"));
+        assertTrue(p.skipPrefix("123"));
+        assertTrue(p.skipPrefix("*&^"));
+        assertFalse(p.skipPrefix("000"));
+        assertFalse(p.skipPrefix("001"));
+        assertTrue(p.skipPrefix("002"));
+        assertTrue(p.skipPrefix("IhorFox"));
+        assertFalse(p.skipPrefix("easter"));
+        assertTrue(p.skipPrefix("-end"));
+    }
+
+    @Test
+    public void prefixTest03() {
+        ParseIt p = parse("zinto");
+        assertTrue(p.skipPrefix("zin"));
+        assertFalse(p.skipPrefix("tozzzz"));
+        assertFalse(p.skipPrefix("VOID"));
+    }
+
+    @Test
+    public void prefixTest04() {
+        ParseIt p = parse("x");
+        assertTrue(p.skipPrefix("x"));
+        assertFalse(p.skipPrefix(""));
+    }
+
+    @Test
+    public void validateTest01() {
+        ParseIt p = parse("name = Fox and Aldie end");
+        assertTrue(p.validate("name = * and * end", "*"));
+    }
+
+    @Test
+    public void validateTest02() {
+        ParseIt p = parse("name = Fox and Aldie end");
+        assertFalse(p.validate("name = Ilie and * end", "*"));
+    }
+
+    @Test
+    public void validateTest03() {
+        ParseIt p = parse("call aaa(bbb, ccc);");
+        assertTrue(p.validate("call *(*);", "*"));
+    }
+
+    @Test
+    public void validateTest04() {
+        ParseIt p = parse(" a(zen que) biz");
+        p.skip(1);
+        assertTrue(p.validate("*(*)", "*"));
+        assertFalse(p.validate("*=*", "*"));
+        p.setString("dirt = Heller");
+        assertFalse(p.validate("*(*)", "*"));
+        assertTrue(p.validate("*=*", "*"));
     }
 
     private static ParseIt parse(String text) {

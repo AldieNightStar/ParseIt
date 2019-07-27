@@ -15,6 +15,18 @@ Escaped escaped = p.escapeQuoted("\"") // Escaping "))" to $$(0)$$
 System.out.println(  escaped.getFirstEscaped()  ); // Will print: ))
 System.out.println(  escaped.string  ); // Will print: test($$(0)$$) - so you can simply continue to parse your code ;)
 ```
+* You can validate type of operation is going on next :)
+```java
+String code = "x = 123"; // Our sample Code
+ParseIt p = ParseIt.parse(code); // Creating parser
+boolean isSettingVariable = p.validate("*=*", "*"); // Check if it's a variable setting
+boolean isFunctionCalling = p.validate("*(*)", "*"); // Check if it's a variable setting
+if (isSettingVariable) {
+    // do smth...
+} else if (isFunctionCalling) {
+    // do smth...
+}
+```
 
 ```java
 public class Main {
