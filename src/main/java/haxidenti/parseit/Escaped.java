@@ -22,12 +22,16 @@ public class Escaped {
         return str[0];
     }
 
-    public String unescapeWithQuotes(String quote) {
-        String[] str = new String[]{string};
+    public String unescapeWithQuotes(String code, String quote) {
+        String[] str = new String[]{code};
         map.forEach((k, v) -> {
             str[0] = str[0].replace("$$(" + k + ")$$", quote + v + quote);
         });
         return str[0];
+    }
+
+    public String unescapeWithQuotes(String quote) {
+        return unescapeWithQuotes(this.string, quote);
     }
 
     public String unescape(String s) {

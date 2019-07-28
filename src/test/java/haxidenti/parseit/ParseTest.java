@@ -217,6 +217,13 @@ public class ParseTest {
     }
 
     @Test
+    public void escapeInQuotes03() {
+        Escaped escaped = ParseIt.escapeQuoted("live !alone!", "!");
+        assertEquals("he is !alone!", escaped.unescapeWithQuotes("he is $$(0)$$", "!"));
+        assertEquals("he is noone", escaped.unescapeWithQuotes("he is noone", "!"));
+    }
+
+    @Test
     public void prefixTest01() {
         ParseIt p = parse("xxPREFIXpoe");
         assertTrue(p.skipPrefix("xx"));
